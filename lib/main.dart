@@ -31,6 +31,8 @@ class SmartFoodDonationApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Roboto',
       ),
+      // App starts at the Splash screen, then Login/Signup, then Home.
+      // From Home the user opens Donate Food, My Donations, Requests & Profile.
       home: const SplashScreen(),
     );
   }
