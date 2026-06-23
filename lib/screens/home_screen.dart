@@ -1,14 +1,25 @@
 import 'package:flutter/material.dart';
+import '../models/food_request.dart';
 import '../utils/colors.dart';
 import '../utils/current_user.dart';
+import '../utils/notification_store.dart';
+import '../utils/request_store.dart';
+import '../widgets/app_network_image.dart';
+import '../widgets/status_badge.dart';
 import 'donate_food_screen.dart';
 import 'my_donations_screen.dart';
 import 'nearby_requests_screen.dart';
+import 'notifications_screen.dart';
 import 'profile_screen.dart';
 import 'request_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  /// Route name for the dashboard. Used so flows that rebuild the navigation
+  /// stack (e.g. confirming a donation on DonationSummaryScreen) can return
+  /// here instead of the splash screen.
+  static const String routeName = '/home';
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -17,8 +28,30 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
+  /// Opens the full details for [r], then refreshes so a status change made
+  /// there is reflected on the dashboard card too.
+  Future<void> _openRequest(FoodRequest r) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => RequestDetailsScreen(request: r)),
+    );
+    if (mounted) setState(() {});
+  }
+
+  /// Opens the Notifications screen, then refreshes so the unread badge on
+  /// the bell updates after the user reads/clears notifications.
+  Future<void> _openNotifications() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+    );
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
+    // The request featured on the dashboard (also opens in full on tap).
+    final FoodRequest featured = RequestStore.all.first;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -43,13 +76,49 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Icon(Icons.keyboard_arrow_down, color: Colors.black),
                     ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      shape: BoxShape.circle,
+                  // Notification bell — opens the Notifications screen and
+                  // shows a red badge with the number of unread items.
+                  GestureDetector(
+                    onTap: _openNotifications,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.notifications_none, color: Colors.black),
+                        ),
+                        if (NotificationStore.unreadCount > 0)
+                          Positioned(
+                            right: -2,
+                            top: -2,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              constraints: const BoxConstraints(
+                                minWidth: 18,
+                                minHeight: 18,
+                              ),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                "${NotificationStore.unreadCount}",
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.0,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                    child: const Icon(Icons.notifications_none, color: Colors.black),
                   ),
                 ],
               ),
@@ -151,9 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 10),
               // Nearby Request Card
               GestureDetector(
-                onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const RequestDetailsScreen()));
-                },
+                onTap: () => _openRequest(featured),
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -164,11 +231,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: Image.network(
-                          "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=200",
+                        child: AppNetworkImage(
+                          featured.imageUrl,
                           width: 80,
                           height: 80,
-                          fit: BoxFit.cover,
                         ),
                       ),
                       const SizedBox(width: 15),
@@ -176,31 +242,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              "Meals for 10 People",
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            Text(
+                              featured.title,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                             ),
-                            const Text(
-                              "by Hope Foundation",
-                              style: TextStyle(color: Colors.grey, fontSize: 13),
+                            Text(
+                              featured.org,
+                              style: const TextStyle(color: Colors.grey, fontSize: 13),
                             ),
-                            const SizedBox(height: 5),
-                            Row(
-                              children: [
-                                const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
-                                const Text(
-                                  " 500 m away",
-                                  style: TextStyle(color: Colors.grey, fontSize: 12),
-                                ),
-                              ],
-                            ),
+                            const SizedBox(height: 6),
+                            // Real status badge for the featured request.
+                            StatusBadge(featured.status, fontSize: 10),
                           ],
                         ),
                       ),
                       ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => const RequestDetailsScreen()));
-                        },
+                        onPressed: () => _openRequest(featured),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGreen,
                           shape: RoundedRectangleBorder(

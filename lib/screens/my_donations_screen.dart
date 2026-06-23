@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 import '../utils/colors.dart';
 import '../models/donation.dart';
 import '../utils/donation_store.dart';
+import '../widgets/app_network_image.dart';
 
-class MyDonationsScreen extends StatelessWidget {
+class MyDonationsScreen extends StatefulWidget {
   const MyDonationsScreen({super.key});
 
+  @override
+  State<MyDonationsScreen> createState() => _MyDonationsScreenState();
+}
+
+class _MyDonationsScreenState extends State<MyDonationsScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -81,8 +87,7 @@ class MyDonationsScreen extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: Image.network(donation.imageUrl,
-                width: 70, height: 70, fit: BoxFit.cover),
+            child: AppNetworkImage(donation.imageUrl, width: 70, height: 70),
           ),
           const SizedBox(width: 15),
           Expanded(
@@ -92,7 +97,19 @@ class MyDonationsScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(donation.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    // Expanded + ellipsis so a long title shrinks instead of
+                    // overflowing (the yellow/black striped bar) next to the
+                    // status badge and delete button.
+                    Expanded(
+                      child: Text(
+                        donation.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
@@ -116,8 +133,45 @@ class MyDonationsScreen extends StatelessWidget {
               ],
             ),
           ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.red),
+            tooltip: "Delete donation",
+            onPressed: () => _confirmDelete(donation),
+          ),
         ],
       ),
     );
+  }
+
+  // Asks the user to confirm before removing a donation from the list.
+  Future<void> _confirmDelete(Donation donation) async {
+    final bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Donation"),
+        content: Text(
+          'Are you sure you want to delete "${donation.title}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete == true) {
+      setState(() => DonationStore.remove(donation));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('"${donation.title}" deleted')),
+        );
+      }
+    }
   }
 }

@@ -73,4 +73,10 @@ class DonationStore {
   static void add(Donation donation) {
     _donations.insert(0, donation);
   }
+
+  /// Removes a donation from the list (used by the delete button on the
+  /// My Donations screen).
+  static void remove(Donation donation) {
+    _donations.remove(donation);
+  }
 }

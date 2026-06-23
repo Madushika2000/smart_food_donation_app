@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../utils/colors.dart';
 import '../models/donation.dart';
 import '../utils/donation_store.dart';
-import 'my_donations_screen.dart';
+import '../widgets/app_network_image.dart';
+import 'donation_summary_screen.dart';
 
 /// Donate Food screen.
 ///
@@ -204,7 +205,7 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
                           elevation: 0,
                         ),
                         child: const Text(
-                          "Submit Donation",
+                          "Next",
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -267,7 +268,7 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
                     },
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.network(url, fit: BoxFit.cover),
+                      child: AppNetworkImage(url),
                     ),
                   );
                 }).toList(),
@@ -350,10 +351,10 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
       ),
     );
 
-    // Open My Donations so the user can immediately see the new item.
+    // Open the Summary screen instead of going straight to My Donations
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const MyDonationsScreen()),
+      MaterialPageRoute(builder: (context) => const DonationSummaryScreen()),
     );
   }
 
@@ -514,7 +515,7 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(15),
-          child: Image.network(url, width: 70, height: 70, fit: BoxFit.cover),
+          child: AppNetworkImage(url, width: 70, height: 70),
         ),
         Positioned(
           top: 2,

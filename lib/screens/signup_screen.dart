@@ -35,21 +35,28 @@ class _SignupScreenState extends State<SignupScreen> {
   /// Reads the fields, saves the user, then goes to the Login screen.
   Future<void> _signUp() async {
     final String name = nameController.text.trim();
+    final String email = emailController.text.trim();
+    final String password = passwordController.text;
 
-    // Simple check: the name should not be empty.
-    if (name.isEmpty) {
+    // Make sure the essentials are filled in — these become the account the
+    // Login screen later checks against, so they cannot be empty.
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter your full name")),
+        const SnackBar(
+          content: Text("Please fill in your name, email and password"),
+        ),
       );
       return;
     }
 
     // Save the signed-up user (also stored on the device) so Home and
-    // Profile can show these details, even after a restart.
+    // Profile can show these details, even after a restart. The password is
+    // stored locally so login can be validated offline (demo only).
     await CurrentUser.setUser(
       name: name,
-      email: emailController.text.trim(),
+      email: email,
       phone: phoneController.text.trim(),
+      password: password,
     );
 
     // Make sure this screen is still active after the save.
